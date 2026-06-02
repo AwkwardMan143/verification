@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Server Verification</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="card">
+    <h1>Server Verification</h1>
+    <p class="subtitle">Complete verification to access the server.</p>
+
+    <div id="state-loading" class="state">Checking your verification link…</div>
+
+    <div id="state-error" class="state hidden">
+      <p class="error" id="error-message">This link is invalid or expired.</p>
+      <p class="hint">Run <strong>/verify</strong> again in Discord to get a new link.</p>
+    </div>
+
+    <div id="state-ready" class="state hidden">
+      <p class="hint" id="expires-hint"></p>
+      <label class="checkbox-row">
+        <input type="checkbox" id="agree" />
+        <span>I confirm I am completing verification for my own Discord account.</span>
+      </label>
+      <button id="verify-btn" type="button" disabled>Verify my account</button>
+    </div>
+
+    <div id="state-done" class="state hidden">
+      <p class="success">You are verified. You can close this page and return to Discord.</p>
+    </div>
+
+    <p class="footer">Link is single-use and expires in 15 minutes.</p>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="verify.js"></script>
+</body>
+</html>
