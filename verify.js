@@ -9,6 +9,7 @@ const errorMessageEl = document.getElementById("error-message");
 const expiresHintEl = document.getElementById("expires-hint");
 const agreeEl = document.getElementById("agree");
 const verifyBtn = document.getElementById("verify-btn");
+const apiDebugEl = document.getElementById("api-debug");
 
 function show(el) {
   [loadingEl, errorEl, readyEl, doneEl].forEach((node) => node.classList.add("hidden"));
@@ -27,7 +28,46 @@ function apiHeaders(extra) {
   return headers;
 }
 
+function showConfigDebug() {
+  if (!apiDebugEl) return;
+  const base = apiBase();
+  if (!base || base.includes("REPLACE-WITH-YOUR-PUBLIC-BOT-URL")) {
+    apiDebugEl.textContent = "API: not configured (edit config.js on GitHub)";
+  } else {
+    apiDebugEl.textContent = `API: ${base}`;
+  }
+}
+
+function networkErrorMessage(err) {
+  const msg = String(err && err.message ? err.message : err);
+  if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
+    return (
+      "Could not connect to your bot API. This is usually a dead ngrok/cloudflare tunnel, " +
+      "wrong URL in config.js on GitHub, or bot.py not running. " +
+      "Open YOUR-TUNNEL-URL/health in the browser — if that fails, fix the tunnel first."
+    );
+  }
+  return `Connection error: ${msg}`;
+}
+
+async function probeApiHealth() {
+  const res = await fetch(`${apiBase()}/health`, {
+    method: "GET",
+    headers: apiHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error(`Health check failed (HTTP ${res.status})`);
+  }
+  const data = await res.json();
+  if (!data.bot_ready) {
+    throw new Error("Bot API is up but Discord bot is not ready yet");
+  }
+  return data;
+}
+
 async function checkToken() {
+  showConfigDebug();
+
   if (!token) {
     errorMessageEl.textContent = "No verification token in the link.";
     show(errorEl);
@@ -36,7 +76,16 @@ async function checkToken() {
 
   if (!apiBase() || apiBase().includes("REPLACE-WITH-YOUR-PUBLIC-BOT-URL")) {
     errorMessageEl.textContent =
-      "This page is not configured yet. Edit config.js with your public bot API URL.";
+      "This page is not configured yet. Edit config.js on GitHub with your public bot URL.";
+    show(errorEl);
+    return;
+  }
+
+  try {
+    await probeApiHealth();
+  } catch (err) {
+    console.error("Health probe failed:", err);
+    errorMessageEl.textContent = networkErrorMessage(err);
     show(errorEl);
     return;
   }
@@ -44,14 +93,14 @@ async function checkToken() {
   try {
     const res = await fetch(
       `${apiBase()}/web-verify/status?token=${encodeURIComponent(token)}`,
-      { headers: apiHeaders() }
+      { method: "GET", headers: apiHeaders() }
     );
     let data;
     try {
       data = await res.json();
     } catch (_parseErr) {
       errorMessageEl.textContent =
-        "Verification server returned an invalid response. Check ngrok is running and config.js has the correct URL.";
+        "Verification server returned an invalid response (not JSON). Tunnel may be showing a warning page — update verify.js on GitHub.";
       show(errorEl);
       return;
     }
@@ -71,8 +120,7 @@ async function checkToken() {
     show(readyEl);
   } catch (err) {
     console.error(err);
-    errorMessageEl.textContent =
-      "Could not reach the verification server. Keep bot.py and ngrok running, and confirm config.js on GitHub has your current ngrok URL.";
+    errorMessageEl.textContent = networkErrorMessage(err);
     show(errorEl);
   }
 }
@@ -112,7 +160,15 @@ verifyBtn.addEventListener("click", async () => {
       headers: apiHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ token, agreed: true, client_meta: client_meta || {} }),
     });
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch (_parseErr) {
+      errorMessageEl.textContent =
+        "Verification server returned an invalid response. Check tunnel and bot.py.";
+      show(errorEl);
+      return;
+    }
 
     if (!res.ok || !data.ok) {
       const messages = {
@@ -120,6 +176,7 @@ verifyBtn.addEventListener("click", async () => {
         expired: "This verification link has expired.",
         confirmation_required: "Check the confirmation box first.",
         verify_failed: "Verification failed on the server.",
+        bot_not_ready: "Discord bot is still starting — wait and try again.",
       };
       errorMessageEl.textContent = messages[data.error] || "Verification failed.";
       show(errorEl);
@@ -129,7 +186,7 @@ verifyBtn.addEventListener("click", async () => {
     show(doneEl);
   } catch (err) {
     console.error(err);
-    errorMessageEl.textContent = "Could not reach the verification server.";
+    errorMessageEl.textContent = networkErrorMessage(err);
     show(errorEl);
   }
 });
