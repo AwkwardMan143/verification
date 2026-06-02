@@ -1,2 +1,2 @@
-const BOT_API_URL = "https://buffed-bonsai-stool.ngrok-free.dev";
+const BOT_API_URL = "https://exploring-vbulletin-jon-retrieve.trycloudflare.com";
 window.BOT_API_URL = BOT_API_URL;
