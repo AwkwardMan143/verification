@@ -46,7 +46,15 @@ async function checkToken() {
       `${apiBase()}/web-verify/status?token=${encodeURIComponent(token)}`,
       { headers: apiHeaders() }
     );
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch (_parseErr) {
+      errorMessageEl.textContent =
+        "Verification server returned an invalid response. Check ngrok is running and config.js has the correct URL.";
+      show(errorEl);
+      return;
+    }
 
     if (!res.ok || !data.ok) {
       const messages = {
@@ -64,7 +72,7 @@ async function checkToken() {
   } catch (err) {
     console.error(err);
     errorMessageEl.textContent =
-      "Could not reach the verification server. Is bot.py running and publicly reachable?";
+      "Could not reach the verification server. Keep bot.py and ngrok running, and confirm config.js on GitHub has your current ngrok URL.";
     show(errorEl);
   }
 }
