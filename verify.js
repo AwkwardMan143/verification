@@ -19,6 +19,14 @@ function apiBase() {
   return String(window.BOT_API_URL || "").replace(/\/$/, "");
 }
 
+function apiHeaders(extra) {
+  const headers = { ...(extra || {}) };
+  if (apiBase().includes("ngrok")) {
+    headers["ngrok-skip-browser-warning"] = "69420";
+  }
+  return headers;
+}
+
 async function checkToken() {
   if (!token) {
     errorMessageEl.textContent = "No verification token in the link.";
@@ -34,7 +42,10 @@ async function checkToken() {
   }
 
   try {
-    const res = await fetch(`${apiBase()}/web-verify/status?token=${encodeURIComponent(token)}`);
+    const res = await fetch(
+      `${apiBase()}/web-verify/status?token=${encodeURIComponent(token)}`,
+      { headers: apiHeaders() }
+    );
     const data = await res.json();
 
     if (!res.ok || !data.ok) {
@@ -90,7 +101,7 @@ verifyBtn.addEventListener("click", async () => {
     const client_meta = await fetchClientGeo();
     const res = await fetch(`${apiBase()}/web-verify/complete`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: apiHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ token, agreed: true, client_meta: client_meta || {} }),
     });
     const data = await res.json();
