@@ -177,8 +177,13 @@ verifyBtn.addEventListener("click", async () => {
         confirmation_required: "Check the confirmation box first.",
         verify_failed: "Verification failed on the server.",
         bot_not_ready: "Discord bot is still starting — wait and try again.",
+        rate_limited: "Too many attempts — wait a few minutes and try again.",
       };
-      errorMessageEl.textContent = messages[data.error] || "Verification failed.";
+      if (data.error === "rate_limited" && data.retry_after) {
+        errorMessageEl.textContent = `Too many attempts. Try again in ${data.retry_after} seconds.`;
+      } else {
+        errorMessageEl.textContent = messages[data.error] || "Verification failed.";
+      }
       show(errorEl);
       return;
     }
