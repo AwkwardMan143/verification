@@ -1,2 +1,2 @@
-const BOT_API_URL = "https://outputs-delegation-probe-humanities.trycloudflare.com";
+const BOT_API_URL = "https://say-globe-accountability-states.trycloudflare.com";
 window.BOT_API_URL = BOT_API_URL;
