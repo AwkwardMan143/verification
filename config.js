@@ -1,2 +1,2 @@
-const BOT_API_URL = "https://giants-complexity-inform-combinations.trycloudflare.com";
+const BOT_API_URL = "https://insulin-normally-timer-complement.trycloudflare.com";
 window.BOT_API_URL = BOT_API_URL;
